@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -9,10 +8,9 @@ import (
 )
 
 type MemoryRepository struct {
-	mu        sync.Mutex
-	data      map[time.Time][]entities.Payment
-	getMutex  *sync.Mutex
-	canIGetIt func()
+	mu       sync.Mutex
+	data     map[time.Time][]entities.Payment
+	getMutex *sync.Mutex
 }
 
 func NewMemoryRepository() (*MemoryRepository, *sync.Mutex) {
@@ -24,10 +22,6 @@ func NewMemoryRepository() (*MemoryRepository, *sync.Mutex) {
 		data:     make(map[time.Time][]entities.Payment),
 		getMutex: mu,
 	}, mu
-}
-
-func (r *MemoryRepository) SetCanIGet(fn func()) {
-	r.canIGetIt = fn
 }
 
 func (r *MemoryRepository) Save(payment *entities.Payment) error {
@@ -53,11 +47,6 @@ func (r *MemoryRepository) Save(payment *entities.Payment) error {
 func (r *MemoryRepository) GetSummary(from, to *time.Time) entities.PaymentSummary {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	r.getMutex.Lock()
-	defer r.getMutex.Unlock()
-
-	fmt.Println("GetSummary called with from:", from, "to:", to)
 
 	if from == nil && to == nil {
 		return r.GetAllPaymentsSummary()
@@ -163,14 +152,3 @@ func (r *MemoryRepository) GetAllPaymentsSummary() entities.PaymentSummary {
 		Fallback: fallbackSummary,
 	}
 }
-
-// func (r *MemoryRepository) WasPaymentProcessed(paymentID string) bool {
-// 	r.mu.Lock()
-// 	defer r.mu.Unlock()
-
-// 	_, exists := r.donePayments[paymentID]
-
-// 	fmt.Println("WasPaymentProcessed:", paymentID, "exists:", exists)
-
-// 	return exists
-// }

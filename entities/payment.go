@@ -6,6 +6,7 @@ type Payment struct {
 	RequestedAt string  `json:"requestedAt"` //2025-07-15T12:34:56.000Z
 	IsDefault   bool    `json:"-"`
 	Err         string  `json:"-"`
+	Attempts    int     `json:"-"`
 }
 
 type PaymentSummary struct {

@@ -4,7 +4,7 @@ networks:
         driver: bridge
 services:
     api1:
-        image: mxlange/payment-api-only-go:latest
+        image: mxlange/payment-api-only-go:v2.0.1
         hostname: api1
         environment:
             - API_INSTANCES=http://api2:8080
@@ -19,7 +19,7 @@ services:
                     cpus: "0.5"
                     memory: "150MB"
     api2:
-        image: mxlange/payment-api-only-go:latest
+        image: mxlange/payment-api-only-go:v2.0.1
         hostname: api2
         environment:
             - API_INSTANCES=http://api1:8080

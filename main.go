@@ -42,8 +42,6 @@ func main() {
 		panic(err)
 	}
 
-	repo.SetCanIGet(worker.CanIGet)
-
 	worker.Start()
 
 	app := fiber.New()

@@ -38,11 +38,18 @@ func (f *Fetch) SendPayment(payment *entities.Payment) (error, bool) {
 	}
 
 	var err error
+
+	payment.Attempts++
+
 	if err = f.send(f.principal, payment); err != nil {
-		if err = f.send(f.fallback, payment); err != nil {
-			return fmt.Errorf("failed to send payment to both services: %v", err), false
+		if payment.Attempts > 2 {
+			if err = f.send(f.fallback, payment); err != nil {
+				return fmt.Errorf("failed to send payment to both services: %v", err), false
+			}
+			return nil, false
+		} else {
+			return err, false
 		}
-		return nil, false
 	}
 
 	return nil, true
@@ -62,8 +69,6 @@ func (f *Fetch) send(url string, payment *entities.Payment) error {
 
 	url = fmt.Sprintf("%s/payments", url)
 
-	fmt.Println("Sending payment to:", url)
-
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("error creating request: %v", err)
@@ -76,8 +81,6 @@ func (f *Fetch) send(url string, payment *entities.Payment) error {
 		return fmt.Errorf("error sending payment to principal service: %v", err)
 	}
 	defer res.Body.Close()
-
-	fmt.Println("Response status code:", res.StatusCode)
 
 	if res.StatusCode == http.StatusUnprocessableEntity {
 		return nil
@@ -97,7 +100,6 @@ func (f *Fetch) GetInstanceSummary(instance string, from, to string) (entities.P
 	}
 
 	url := fmt.Sprintf("%s/payments-summary?internal=true", instance)
-	fmt.Println("Fetching summary from:", url)
 	if from != "" {
 		url += fmt.Sprintf("&from=%s", from)
 	}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/MXLange/rinha-only-go/entities"
@@ -59,8 +60,6 @@ func (h *Handler) GetSummary(c *fiber.Ctx) error {
 	to := c.Query("to")
 	internal := c.Query("internal")
 
-	fmt.Println("Fetching summary with parameters:", "from:", from, "to:", to)
-
 	dateFormat := "2006-01-02T15:04:05.000Z"
 
 	var fromTime, toTime *time.Time = nil, nil
@@ -83,7 +82,6 @@ func (h *Handler) GetSummary(c *fiber.Ctx) error {
 
 	summary := h.repository.GetSummary(fromTime, toTime)
 
-	fmt.Println("Summary fetched:", summary)
 	if internal == "" {
 		for _, instance := range h.apiInstances {
 
@@ -103,8 +101,14 @@ func (h *Handler) GetSummary(c *fiber.Ctx) error {
 		}
 	}
 
-	summary.Default.TotalAmount = float64(int(summary.Default.TotalAmount*100)) / 100
-	summary.Fallback.TotalAmount = float64(int(summary.Fallback.TotalAmount*100)) / 100
+	summary.Default.TotalAmount = roundFloat64(summary.Default.TotalAmount, 2)
+	summary.Fallback.TotalAmount = roundFloat64(summary.Fallback.TotalAmount, 2)
 
+	fmt.Println("Summary fetched:", summary)
 	return c.JSON(summary)
+}
+
+func roundFloat64(x float64, decimals int) float64 {
+	factor := math.Pow(10, float64(decimals))
+	return math.Round(x*factor) / factor
 }

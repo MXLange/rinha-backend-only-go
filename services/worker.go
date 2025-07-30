@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/MXLange/rinha-only-go/entities"
@@ -12,12 +11,11 @@ import (
 )
 
 type Worker struct {
-	channel           chan *entities.Payment
-	concurrency       int
-	repository        *repository.MemoryRepository
-	fetch             *Fetch
-	getMutex          *sync.Mutex
-	processingCounter int64
+	channel     chan *entities.Payment
+	concurrency int
+	repository  *repository.MemoryRepository
+	fetch       *Fetch
+	getMutex    *sync.Mutex
 }
 
 func NewWorker(channel chan *entities.Payment, repo *repository.MemoryRepository, fetch *Fetch, concurrency int, getMutex *sync.Mutex) (*Worker, error) {
@@ -43,12 +41,11 @@ func NewWorker(channel chan *entities.Payment, repo *repository.MemoryRepository
 	}
 
 	return &Worker{
-		channel:           channel,
-		repository:        repo,
-		fetch:             fetch,
-		concurrency:       concurrency,
-		getMutex:          getMutex,
-		processingCounter: 0,
+		channel:     channel,
+		repository:  repo,
+		fetch:       fetch,
+		concurrency: concurrency,
+		getMutex:    getMutex,
 	}, nil
 }
 
@@ -64,21 +61,9 @@ func (w *Worker) worker() {
 			w.getMutex.Lock()
 			w.getMutex.Unlock()
 
-			atomic.AddInt64(&w.processingCounter, 1)
-			defer func() {
-				atomic.AddInt64(&w.processingCounter, -1)
-				i := atomic.LoadInt64(&w.processingCounter)
-				fmt.Println("Current processing count:", i)
-			}()
-
 			var err error
 
 			p.RequestedAt = time.Now().UTC().Format("2006-01-02T15:04:05.000Z")
-
-			// wasProcessed := w.repository.WasPaymentProcessed(p.ID)
-			// if wasProcessed {
-			// 	return
-			// }
 
 			if p.Err != "SAVE" {
 				err, p.IsDefault = w.fetch.SendPayment(p)
@@ -95,11 +80,5 @@ func (w *Worker) worker() {
 				w.channel <- p
 			}
 		}()
-	}
-}
-
-func (w *Worker) CanIGet() {
-	for atomic.LoadInt64(&w.processingCounter) > 0 {
-		time.Sleep(10 * time.Millisecond)
 	}
 }
