@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,7 +28,15 @@ func NewFetch(baseDefault, baseFallback string) (*Fetch, error) {
 	return &Fetch{
 		principal: baseDefault,
 		fallback:  baseFallback,
-		client:    &http.Client{Timeout: 10 * time.Second},
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				IdleConnTimeout: 90 * time.Second,
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+		},
 	}, nil
 }
 
